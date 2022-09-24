@@ -1,67 +1,53 @@
-from flask import Flask, request, jsonify
-
+from flask import Flask, request
+from db import items, stores
+import uuid
 
 app = Flask(__name__)
-
-stores = [
-    {
-        "name": "Armazem Paraiba",
-        "items": [
-            {
-                "name": "cadeira",
-                "price": 340
-            },
-            {
-                "name": "mesa",
-                "price": 700
-            }
-        ]
-    }
-]
 
 
 @app.get('/store')
 def index():
-    return jsonify(stores)
+    return {"stores": list(stores.values())}, 202
 
 
-@app.get('/store/<string:name>')
-def get_store(name):
-    for store in stores:
-        if store['name'] == name:
-            return jsonify(store)
-    return jsonify({"message": "Store not found"})
+@app.get('/store/<string:store_id>')
+def get_store(store_id):
+    try:
+        return stores[store_id], 202
+    except KeyError:
+        return {"message": "store not found"}
 
 
-@app.get('/store/<string:name>/item')
-def get_items_in_store(name):
-    for store in stores:
-        if store['name'] == name:
-            return jsonify(store['items'])
-    return jsonify({"message": "Store not found"})
+@app.get('/item/<string:item_id>')
+def get_items_in_store(item_id):
+    try:
+        return items[item_id], 202
+    except KeyError:
+        return {"message": "item not found"}, 404
 
 
 @app.post('/store')
 def create_store():
-    data = request.get_json()
-    if data['name'] not in [store['name'] for store in stores]:
-        stores.append({"name": data['name'], "items": []})
-        return jsonify(stores)
-    return {"message": "Store already created!"}
+    data_store = request.get_json()
+    if data_store['name'] not in stores.values():
+        store_id = uuid.uuid4().hex
+        new_store = {"id": store_id, **data_store}
+        stores['id'] = new_store
+        return new_store, 201
+    return {"message": "store already created"}, 409
 
 
-@app.post('/store/<string:name>/item')
-def create_item_in_store(name):
-    data = request.get_json()
-    for store in stores:
-        if store['name'] == name:
-            new_item = {
-                'name': data['name'],
-                'price': data['price']
-            }
-            store['items'].append(new_item)
-            return jsonify(new_item)
-    return {"message": "Store not found"}
+@app.post('/item')
+def create_item():
+    data_item = request.get_json()
+    if data_item['store_id'] not in stores:
+        return {"message": "store not found"}, 404
+
+    item_id = uuid.uuid4().hex
+    new_item = {"id": item_id, **data_item}
+    items[item_id] = new_item
+
+    return new_item
 
 
 if __name__ == '__main__':
