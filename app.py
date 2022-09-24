@@ -19,11 +19,16 @@ def get_store(store_id):
 
 
 @app.get('/item/<string:item_id>')
-def get_items_in_store(item_id):
+def get_item(item_id):
     try:
         return items[item_id], 202
     except KeyError:
         return {"message": "item not found"}, 404
+
+
+@app.get('/item')
+def get_items():
+    return {"items": list(items.values())}, 202
 
 
 @app.post('/store')
@@ -32,7 +37,7 @@ def create_store():
     if data_store['name'] not in stores.values():
         store_id = uuid.uuid4().hex
         new_store = {"id": store_id, **data_store}
-        stores['id'] = new_store
+        stores[store_id] = new_store
         return new_store, 201
     return {"message": "store already created"}, 409
 
@@ -40,9 +45,6 @@ def create_store():
 @app.post('/item')
 def create_item():
     data_item = request.get_json()
-    if data_item['store_id'] not in stores:
-        return {"message": "store not found"}, 404
-
     item_id = uuid.uuid4().hex
     new_item = {"id": item_id, **data_item}
     items[item_id] = new_item
