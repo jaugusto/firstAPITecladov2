@@ -42,7 +42,7 @@ def update_item(item_id):
         abort(404, message="Bad request. Ensure 'name' or 'price' in JSON payload")
     try:
         item = items[item_id]
-        item = {**item, **item_data}
+        item |= item_data
         return item
     except KeyError:
         abort(404, message="item not found")
