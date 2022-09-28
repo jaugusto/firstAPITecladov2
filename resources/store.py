@@ -29,7 +29,7 @@ class Store(MethodView):
 class StoreList(MethodView):
     @blp.response(200, StoreSchema(many=True))
     def get(self):
-        return {"stores": list(stores.values())}, 202
+        return stores.values()
 
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
