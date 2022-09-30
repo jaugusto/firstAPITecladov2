@@ -1,9 +1,9 @@
-import uuid
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import stores
 from schemas import StoreSchema
+from models import StoreModel
+from db import db
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 blp = Blueprint("stores", __name__, description="Store Module")
 
@@ -12,32 +12,29 @@ blp = Blueprint("stores", __name__, description="Store Module")
 class Store(MethodView):
     @blp.response(200, StoreSchema)
     def get(self, store_id):
-        try:
-            return stores[store_id], 202
-        except KeyError:
-            abort(404, message="store not found.")
+        return StoreModel.query.get_or_404(store_id)
 
     def delete(self, store_id):
-        try:
-            del stores[store_id]
-            return {"message": "store deleted."}
-        except KeyError:
-            abort(404, message="store not found")
+        item = StoreModel.query.get_or_404(store_id)
+        db.session.delete(item)
+        db.session.commit()
+        return {"message": "store deleted"}
 
 
 @blp.route('/store')
 class StoreList(MethodView):
     @blp.response(200, StoreSchema(many=True))
     def get(self):
-        return stores.values()
+        return StoreModel.query.all()
 
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
     def post(self, data_store):
-        for store in stores.values():
-            if data_store['name'] == store['name']:
-                abort(400, message="store already created")
-        store_id = uuid.uuid4().hex
-        new_store = {"id": store_id, **data_store}
-        stores[store_id] = new_store
-        return new_store, 201
+        store = StoreModel(**data_store)
+        try:
+            db.session.add(store)
+            db.session.commit()
+        except IntegrityError:
+            abort(400, message="A story with that already exists")
+        except SQLAlchemyError:
+            abort(500, message="A error occurred while tried save a store")
