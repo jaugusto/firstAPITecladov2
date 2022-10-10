@@ -28,7 +28,7 @@ class StoreList(MethodView):
         return StoreModel.query.all()
 
     @blp.arguments(StoreSchema)
-    @blp.response(200, StoreSchema)
+    @blp.response(201, StoreSchema)
     def post(self, data_store):
         store = StoreModel(**data_store)
         try:
