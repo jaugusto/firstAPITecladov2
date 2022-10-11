@@ -4,11 +4,12 @@ from schemas import ItemSchema, ItemUpdateSchema
 from models import ItemModel
 from db import db
 from sqlalchemy.exc import SQLAlchemyError
+from flask_jwt_extended import jwt_required
 
 blp = Blueprint('items', __name__, description="Item module")
 
 
-@blp.route('/item/<string:item_id>')
+@blp.route('/item/<int:item_id>')
 class Item(MethodView):
     @blp.response(200, ItemSchema)
     def get(self, item_id):
@@ -42,6 +43,7 @@ class ItemList(MethodView):
     def get(self):
         return ItemModel.query.all()
 
+    @jwt_required(fresh=True)
     @blp.arguments(ItemSchema)
     @blp.response(201, ItemSchema)
     def post(self, data_item):
